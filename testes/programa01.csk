@@ -1,0 +1,6 @@
+class OlaMundo{
+	void main(char[] args){
+		WriteLine("Ola mundo!");
+	}
+
+}
