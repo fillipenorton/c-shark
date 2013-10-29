@@ -1,0 +1,9 @@
+class Program02{
+	void main(char[] args){
+		int num = 1;
+		
+		if(num <= 2){
+			num = num + 5;
+		}
+	}
+}
