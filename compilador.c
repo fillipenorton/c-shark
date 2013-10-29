@@ -25,16 +25,16 @@ int coluna = 0; // coluna atual
 int colunaLexema = 1; // coluna do ultimo lexema lido
 int boolNovoLexema = 0; // 1 se foi lido um novo lexema
 
-char tokens[50][20] = {"CLASS", "FOR","WHILE", "IF", "ELSE", "SWITCH", "CASE", "VOID", "CHAR", "INT", "FLOAT", "BOOL", // 12
-	"CONST", "TRUE", "FALSE", "NULL", "RETURN", "BREAK", "STRUCT", "ADD", "SUB", "MUL", "DIV", "MOD", "IGUAL", // 25
-	"MAIOR_IGUAL", "MENOR_IGUAL", "MAIOR", "MENOR", "DIF", "NOT", "AND", "OR", "ATRIB", "ABRE_PAREN",
-	"FECHA_PAREN", "ABRE_COLCH", "FECHA_COLCH", "ABRE_CHAV", "FECHA_CHAV", "FIM", "SEPARADOR", "COMENT_CURTO",
-	"ABRE_COMENT_LONGO", "FECHA_COMENT_LONGO", "NUM_FLOAT", "NUM_INT"};
+char tokens[50][20] = {"CLASS", "FOR","WHILE", "IF", "ELSE", "SWITCH", "CASE", "VOID", "CHAR", "INT", "FLOAT", "BOOL", // 11
+	"CONST", "TRUE", "FALSE", "NULL", "RETURN", "BREAK", "STRUCT", "ADD", "SUB", "MUL", "DIV", "MOD", "IGUAL", // 24
+	"MAIOR_IGUAL", "MENOR_IGUAL", "MAIOR", "MENOR", "DIF", "NOT", "AND", "OR", "ATRIB", "ABRE_PAREN", // 34
+	"FECHA_PAREN", "ABRE_COLCH", "FECHA_COLCH", "ABRE_CHAV", "FECHA_CHAV", "FIM", "SEPARADOR", "COMENT_CURTO", // 42
+	"ABRE_COMENT_LONGO", "FECHA_COMENT_LONGO", "NUM_FLOAT", "NUM_INT"}; // 46
 
 char res_palavras[RES_PALAVRAS][20] = {"class", "for", "while", "if", "else", "switch", "case", "void", "char", "int",
 		"float", "bool", "const", "true", "false", "null", "return", "break", "struct"};
 
-char res_simbolos[RES_SIMBOLOS][2] = {"+", "-", "*", "/", "%", "==", ">=", "<=", ">", "<", "!=", "!", "&&", "||", "=",
+char res_simbolos[RES_SIMBOLOS][3] = {"+", "-", "*", "/", "%", "==", ">=", "<=", ">", "<", "!=", "!", "&&", "||", "=",
 		"(", ")", "[", "]", "{", "}", ";", ",", "//", "/*", "*/"};
 
 void inicializa();
@@ -48,11 +48,12 @@ void simbolos();
 char *getTokenSimbolo(char simb[MAX_IDENT]);
 
 int main(int argc, char *argv[]){
-	char *codigoFonte = NULL;
+	// char *codigoFonte = NULL;
 
-	strcpy(codigoFonte, argv[1]);
+	// strcpy(codigoFonte, argv[1]);
 
-	inicializa(codigoFonte);
+	// inicializa(codigoFonte);
+	inicializa("/home/marivaldo/git/c-shark/testes/programa01.csk");
 
 	analisador();
 
@@ -90,7 +91,8 @@ void analisador(){
 			novoToken = verificaTokenIdentificador(novoLexema);
 			boolNovoLexema = 1;
 		}else if((caractere >= '0' && caractere <= '9')){ // numeros
-
+			numero();
+			boolNovoLexema = 1;
 		}else if(caractere == '\n'){
 			linha++;
 			coluna = 0;
@@ -164,12 +166,14 @@ char *verificaTokenIdentificador(char ident[MAX_IDENT]){
  */
 void simbolos(){
 	char auxCaractere[2];
+	int boolString = 0;
+	novoLexema[0] = '\0';
 
 	auxCaractere[0] = caractere;
 	auxCaractere[1] = '\0';
 
 	if(caractere == '"'){ // string
-		novoLexema[0] = '\0';
+		boolString = 1;
 		strcat(novoLexema, "\\\"");
 		caractere = fgetc(fonte);
 		coluna++;
@@ -185,9 +189,22 @@ void simbolos(){
 		if(caractere=='"'){
 			strcat(novoLexema, "\\\"");
 		}
-		strcpy(novoToken, "CADEIA");
+		//strcpy(novoToken, "CADEIA");
+		novoToken = "CADEIA";
+	}else if(caractere == '<' || caractere == '>' || caractere == '='){
+		strcat(novoLexema, auxCaractere);
+		caractere = fgetc(fonte);
+
+		if(caractere == '='){
+			auxCaractere[0] = caractere;
+			auxCaractere[1] = '\0';
+
+			strcat(novoLexema, auxCaractere);
+		}
 	}else{
 		strcpy(novoLexema, auxCaractere);
+	}
+	if(!boolString){
 		novoToken = getTokenSimbolo(novoLexema);
 	}
 }
@@ -198,7 +215,7 @@ void simbolos(){
  *  @param lex Um simbolo
  *  @return token correspondente ao simbolo
 */
-char *getTokenSimbolo(char simb[MAX_IDENT]){
+char *getTokenSimbolo(char simb[3]){
 	int i;
 
 	for(i=0; i<RES_SIMBOLOS; i++){
@@ -210,8 +227,44 @@ char *getTokenSimbolo(char simb[MAX_IDENT]){
 	return "ERROR";
 }
 
+/*
+ * Função para o Estado numero do autômato
+ * Armazena o numero lido na variável global novoLexema
+ */
 void numero(){
+	char auxDigito[2];
+	int isFloat = 0;
+	novoLexema[0] = '\0';
 
+	while( (caractere >= '0' && caractere <= '9') || caractere == '.'){ // loop para identificar o lexema
+		auxDigito[0] = caractere;
+		auxDigito[1] = '\0';
+		strcat(novoLexema, auxDigito); // concatena caracteres para formar identificador
+
+		caractere = fgetc(fonte); // lê o proximo caractere
+		coluna++;
+
+		if(caractere == '.'){
+			isFloat = 1;
+		}
+
+		if(caractere == '\n'){
+			linha++;
+		}
+	}
+
+	if(isFloat){
+		//strcpy(novoToken, "NUM_FLOAT");
+		novoToken = "NUM_FLOAT";
+	}else{
+		//strcpy(novoToken, "NUM_INT");
+		novoToken = "NUM_INT";
+	}
+
+	if(caractere != ' '){ // caso de identificador seguido de simbolo, volta para não perder caractere
+		ungetc(caractere, fonte);
+		coluna--;
+	}
 }
 
 /*
