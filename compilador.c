@@ -81,7 +81,7 @@ void analisador(){
 
 	while((caractere = fgetc(fonte)) != EOF){ // enquanto não chegar ao fim do codigo-fonte
 		boolNovoLexema = 0;
-		novoLexema[0] = '0'; // inicializa a cada loop para poder formar novos lexemas
+		novoLexema[0] = '\0'; // inicializa a cada loop para poder formar novos lexemas
 
 		coluna++;
 		colunaLexema = coluna;
