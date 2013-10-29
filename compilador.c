@@ -191,16 +191,36 @@ void simbolos(){
 		}
 		//strcpy(novoToken, "CADEIA");
 		novoToken = "CADEIA";
-	}else if(caractere == '<' || caractere == '>' || caractere == '='){
+	}else if(caractere == '<' || caractere == '>' || caractere == '=' || caractere == '!'){
 		strcat(novoLexema, auxCaractere);
 		caractere = fgetc(fonte);
-
+                coluna++; 
 		if(caractere == '='){
 			auxCaractere[0] = caractere;
 			auxCaractere[1] = '\0';
 
 			strcat(novoLexema, auxCaractere);
 		}
+	}else if(caractere == '/'){
+		strcat(novoLexema, auxCaractere);
+		caractere = fgetc(fonte);
+		coluna++;
+		if(caractere == '/'){
+			boolString = 1;
+			auxCaractere[0] = caractere;
+			auxCaractere[1] = '\0';	
+			strcat(novoLexema, auxCaractere);
+			while(carectere != '\n'){
+				strcat(novoLexema, auxCaractere);
+				caractere = fgetc(fonte);
+				coluna++;
+			}
+			
+			linha++;
+			coluna = 1;
+			novoToken = "COMENT_CURTO";
+		}
+		
 	}else{
 		strcpy(novoLexema, auxCaractere);
 	}
