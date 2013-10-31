@@ -4,7 +4,7 @@
 
 #define RES_PALAVRAS 19 // quantidade de palavras reservadas
 #define RES_SIMBOLOS 27 // quantidade de simbolos
-#define MAX_IDENT 30 // tamanho máximo do identificador
+#define MAX_IDENT 200 // tamanho máximo do identificador
 
 typedef struct token{
 	char token[20];
@@ -51,8 +51,8 @@ void copiaString(char** to, char* from);
 int main(int argc, char *argv[]){
 	char *codigoFonte;
 
-	copiaString(codigoFonte, argv[1]);
-
+	//copiaString(codigoFonte, argv[1]);
+	copiaString(&codigoFonte, "/home/marivaldo/git/c-shark/testes/programa02.csk");
 	inicializa(codigoFonte);
 
 	analisador();
@@ -98,6 +98,8 @@ void analisador(){
 			coluna = 0;
 			//boolNovoLexema = 1;
 			//strcpy(novoLexema,"\n");
+		}else if(caractere == '\t'){
+			coluna++;
 		}else if(caractere != ' '){ //não-letra, não-número, então simbolo
 			simbolos();
 			boolNovoLexema = 1;
@@ -164,6 +166,7 @@ char *verificaTokenIdentificador(char ident[MAX_IDENT]){
 void simbolos(){
 	char auxCaractere[2];
 	int boolTokenAtribuido = 0;
+	int boolAsteriscoAntes = 0;
 	novoLexema[0] = '\0';
 
 	auxCaractere[0] = caractere;
@@ -190,7 +193,8 @@ void simbolos(){
 	}else if(caractere == '<' || caractere == '>' || caractere == '=' || caractere == '!'){
 		strcat(novoLexema, auxCaractere);
 		caractere = fgetc(fonte);
-                coluna++; 
+		coluna++;
+
 		if(caractere == '='){
 			auxCaractere[0] = caractere;
 			auxCaractere[1] = '\0';
@@ -203,7 +207,6 @@ void simbolos(){
 		coluna++;
 
 		if(caractere == '/'){ // Comentário curto
-			boolTokenAtribuido = 1;
 			while(caractere != '\n'){
 				auxCaractere[0] = caractere;
 				auxCaractere[1] = '\0';
@@ -216,8 +219,67 @@ void simbolos(){
 			linha++;
 			coluna = 1;
 			copiaString(&novoToken, "COMENT_CURTO");
+			boolTokenAtribuido = 1;
+		}else if(caractere == '*'){ // Comentário longo
+			while(boolAsteriscoAntes != 1){
+				auxCaractere[0] = caractere;
+				auxCaractere[1] = '\0';
+
+				strcat(novoLexema, auxCaractere);
+
+				caractere = fgetc(fonte);
+				coluna++;
+				if(caractere == '\n'){
+					caractere = ' '; // salvando quebra de linha em comentários como espaço
+					linha++;
+				}
+				if(caractere == '*'){
+					auxCaractere[0] = caractere;
+					auxCaractere[1] = '\0';
+
+					strcat(novoLexema, auxCaractere);
+
+					caractere = fgetc(fonte);
+					coluna++;
+					if(caractere == '/'){
+						boolAsteriscoAntes = 1;
+
+						auxCaractere[0] = caractere;
+						auxCaractere[1] = '\0';
+						strcat(novoLexema, auxCaractere);
+					}
+				}
+			}
+			copiaString(&novoToken, "COMENT_LONGO");
+			boolTokenAtribuido = 1;
 		}
 		
+	}else if(caractere == '&'){
+		strcat(novoLexema, auxCaractere);
+		caractere = fgetc(fonte);
+		coluna++;
+
+		if(caractere == '&'){ // Operador lógico AND
+			auxCaractere[0] = caractere;
+			auxCaractere[1] = '\0';
+
+			strcat(novoLexema, auxCaractere);
+		}else{ // ERRO
+
+		}
+	}else if(caractere == '|'){
+		strcat(novoLexema, auxCaractere);
+		caractere = fgetc(fonte);
+		coluna++;
+
+		if(caractere == '|'){ // Operador lógico OR
+			auxCaractere[0] = caractere;
+			auxCaractere[1] = '\0';
+
+			strcat(novoLexema, auxCaractere);
+		}else{ // ERRO
+
+		}
 	}else{
 		strcpy(novoLexema, auxCaractere);
 	}
@@ -307,6 +369,8 @@ void addListaTokens(){
 
 /*
  * Imprime uma lista de tokens de código-fonte
+ *
+ * @param listaT Uma lista de tokens
 */
 void imprimeListaTokens(estruturaToken *listaT){
 	estruturaToken *i;
@@ -323,12 +387,15 @@ void imprimeListaTokens(estruturaToken *listaT){
 
 /*
  * Função utilizada quando o tamanho da string 'to'
- * não foi previamente alocada.
+ * não foi previamente definida.
  * Copia da string 'from'para a string 'to'.
+ *
+ * @param to Endereço de uma string
+ * @param from Uma string
 */
 void copiaString(char **to, char *from){
 	int tam;
-	tam = strlen(from);
+	tam = strlen(from) + 1;
 
 	*to = (char *) malloc(sizeof(char) * tam);
 
