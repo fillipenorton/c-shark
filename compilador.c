@@ -51,8 +51,8 @@ void copiaString(char** to, char* from);
 int main(int argc, char *argv[]){
 	char *codigoFonte;
 
-	//copiaString(codigoFonte, argv[1]);
-	copiaString(&codigoFonte, "/home/marivaldo/git/c-shark/testes/programa02.csk");
+	copiaString(codigoFonte, argv[1]);
+
 	inicializa(codigoFonte);
 
 	analisador();
@@ -163,14 +163,14 @@ char *verificaTokenIdentificador(char ident[MAX_IDENT]){
  */
 void simbolos(){
 	char auxCaractere[2];
-	int boolString = 0;
+	int boolTokenAtribuido = 0;
 	novoLexema[0] = '\0';
 
 	auxCaractere[0] = caractere;
 	auxCaractere[1] = '\0';
 
 	if(caractere == '"'){ // string
-		boolString = 1;
+		boolTokenAtribuido = 1;
 		strcat(novoLexema, "\\\"");
 		caractere = fgetc(fonte);
 		coluna++;
@@ -201,26 +201,27 @@ void simbolos(){
 		strcat(novoLexema, auxCaractere);
 		caractere = fgetc(fonte);
 		coluna++;
-		if(caractere == '/'){
-			boolString = 1;
-			auxCaractere[0] = caractere;
-			auxCaractere[1] = '\0';	
-			strcat(novoLexema, auxCaractere);
+
+		if(caractere == '/'){ // Comentário curto
+			boolTokenAtribuido = 1;
 			while(caractere != '\n'){
+				auxCaractere[0] = caractere;
+				auxCaractere[1] = '\0';
+
 				strcat(novoLexema, auxCaractere);
+
 				caractere = fgetc(fonte);
 				coluna++;
 			}
-			
 			linha++;
 			coluna = 1;
-			novoToken = "COMENT_CURTO";
+			copiaString(&novoToken, "COMENT_CURTO");
 		}
 		
 	}else{
 		strcpy(novoLexema, auxCaractere);
 	}
-	if(!boolString){
+	if(!boolTokenAtribuido){
 		novoToken = getTokenSimbolo(novoLexema);
 	}
 }
@@ -320,6 +321,11 @@ void imprimeListaTokens(estruturaToken *listaT){
 	}
 }
 
+/*
+ * Função utilizada quando o tamanho da string 'to'
+ * não foi previamente alocada.
+ * Copia da string 'from'para a string 'to'.
+*/
 void copiaString(char **to, char *from){
 	int tam;
 	tam = strlen(from);
