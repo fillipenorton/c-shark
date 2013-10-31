@@ -1,0 +1,14 @@
+class Prog&ram03{
+	void main(char[] args){
+		int 2num = 1;
+//		char nome*;	
+/*
+	Exemplo de comentário longo
+*/
+		if(n6um <= 3){
+			0num = num + 5;
+		}
+		
+//		#h = 0;
+	}
+}
