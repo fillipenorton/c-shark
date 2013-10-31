@@ -46,14 +46,14 @@ void addListaTokens();
 void imprimeListaTokens(estruturaToken *listaT);
 void simbolos();
 char *getTokenSimbolo(char simb[MAX_IDENT]);
+void copiaString(char** to, char* from);
 
 int main(int argc, char *argv[]){
-	// char *codigoFonte = NULL;
+	char *codigoFonte;
 
-	// strcpy(codigoFonte, argv[1]);
-
-	// inicializa(codigoFonte);
-	inicializa("/home/marivaldo/git/c-shark/testes/programa01.csk");
+	//copiaString(codigoFonte, argv[1]);
+	copiaString(&codigoFonte, "/home/marivaldo/git/c-shark/testes/programa02.csk");
+	inicializa(codigoFonte);
 
 	analisador();
 
@@ -96,11 +96,8 @@ void analisador(){
 		}else if(caractere == '\n'){
 			linha++;
 			coluna = 0;
-			boolNovoLexema = 1;
-			strcpy(novoLexema,"\n");
-		}else if(caractere == '\t'){
-			boolNovoLexema = 1;
-			strcpy(novoLexema,"\t");
+			//boolNovoLexema = 1;
+			//strcpy(novoLexema,"\n");
 		}else if(caractere != ' '){ //não-letra, não-número, então simbolo
 			simbolos();
 			boolNovoLexema = 1;
@@ -189,8 +186,7 @@ void simbolos(){
 		if(caractere=='"'){
 			strcat(novoLexema, "\\\"");
 		}
-		//strcpy(novoToken, "CADEIA");
-		novoToken = "CADEIA";
+		copiaString(&novoToken, "CADEIA");
 	}else if(caractere == '<' || caractere == '>' || caractere == '=' || caractere == '!'){
 		strcat(novoLexema, auxCaractere);
 		caractere = fgetc(fonte);
@@ -210,7 +206,7 @@ void simbolos(){
 			auxCaractere[0] = caractere;
 			auxCaractere[1] = '\0';	
 			strcat(novoLexema, auxCaractere);
-			while(carectere != '\n'){
+			while(caractere != '\n'){
 				strcat(novoLexema, auxCaractere);
 				caractere = fgetc(fonte);
 				coluna++;
@@ -274,11 +270,9 @@ void numero(){
 	}
 
 	if(isFloat){
-		//strcpy(novoToken, "NUM_FLOAT");
-		novoToken = "NUM_FLOAT";
+		copiaString(&novoToken, "NUM_FLOAT");
 	}else{
-		//strcpy(novoToken, "NUM_INT");
-		novoToken = "NUM_INT";
+		copiaString(&novoToken, "NUM_INT");
 	}
 
 	if(caractere != ' '){ // caso de identificador seguido de simbolo, volta para não perder caractere
@@ -295,25 +289,11 @@ void addListaTokens(){
 
 	aux = (estruturaToken *) malloc(sizeof(estruturaToken));
 
-	if(strcmp(novoLexema, "\n") == 0){
-		strcpy(aux->token, "FDL"); // FimDeLinha
-		strcpy(aux->lexema, novoLexema);
-		aux->linha = linha;
-		aux->coluna = colunaLexema;
-		aux->prox = NULL;
-	}else if(strcmp(novoLexema, "\t") == 0){
-		strcpy(aux->token, "TAB"); // Tabulação
-		strcpy(aux->lexema, novoLexema);
-		aux->linha = linha;
-		aux->coluna = colunaLexema;
-		aux->prox = NULL;
-	}else{
-		strcpy(aux->token, novoToken);
-		strcpy(aux->lexema, novoLexema);
-		aux->linha = linha;
-		aux->coluna = colunaLexema;
-		aux->prox = NULL;
-	}
+	strcpy(aux->token, novoToken);
+	strcpy(aux->lexema, novoLexema);
+	aux->linha = linha;
+	aux->coluna = colunaLexema;
+	aux->prox = NULL;
 
 	if(listaTokens == NULL){
 		listaTokens = aux;
@@ -338,4 +318,13 @@ void imprimeListaTokens(estruturaToken *listaT){
 		else
 			printf("<%s,\"%s\">", i->token, i->lexema);
 	}
+}
+
+void copiaString(char **to, char *from){
+	int tam;
+	tam = strlen(from);
+
+	*to = (char *) malloc(sizeof(char) * tam);
+
+	strcpy(*to, from);
 }
