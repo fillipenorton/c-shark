@@ -1,4 +1,5 @@
 class Program02{
+// Exemplo de comentário curto
 	void main(char[] args){
 		int num = 1;
 		
