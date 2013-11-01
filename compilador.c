@@ -33,17 +33,18 @@ int coluna = 0; // coluna atual
 int colunaLexema = 1; // coluna do ultimo lexema lido
 int boolNovoLexema = 0; // 1 se foi lido um novo lexema
 int boolError = 0;
+int boolTab = 0;
 
 char tokens[50][20] = {"CLASS", "FOR","WHILE", "IF", "ELSE", "SWITCH", "CASE", "VOID", "CHAR", "INT", "FLOAT", "BOOL",
 	"CONST", "TRUE", "FALSE", "NULL", "RETURN", "BREAK", "STRUCT", "ADD", "SUB", "MUL", "DIV", "MOD", "IGUAL",
 	"MAIOR_IGUAL", "MENOR_IGUAL", "MAIOR", "MENOR", "DIF", "NOT", "AND", "OR", "ATRIB", "ABRE_PAREN",
-	"FECHA_PAREN", "ABRE_COLCH", "FECHA_COLCH", "ABRE_CHAV", "FECHA_CHAV", "FIM", "SEPARADOR", "COMENT_CURTO"};
+	"FECHA_PAREN", "ABRE_COLCH", "FECHA_COLCH", "ABRE_CHAV", "FECHA_CHAV", "FIM", "SEPARADOR", "INCREMENTO", "DECREMENTO"};
 
 char res_palavras[RES_PALAVRAS][20] = {"class", "for", "while", "if", "else", "switch", "case", "void", "char", "int",
 		"float", "bool", "const", "true", "false", "null", "return", "break", "struct"};
 
 char res_simbolos[RES_SIMBOLOS][3] = {"+", "-", "*", "/", "%", "==", ">=", "<=", ">", "<", "!=", "!", "&&", "||", "=",
-		"(", ")", "[", "]", "{", "}", ";", ",", "//", "/*", "*/"};
+		"(", ")", "[", "]", "{", "}", ";", ",", "++", "--"};
 
 void inicializa();
 void analisador();
@@ -57,11 +58,12 @@ char *getTokenSimbolo(char simb[MAX_IDENT]);
 void copiaString(char** to, char* from);
 void imprimeListaErros(estruturaErro *listaE);
 void addListaErros();
+void concatChar(char *to, char from);
 
 int main(int argc, char *argv[]){
 	char *codigoFonte;
 
-	copiaString(codigoFonte, argv[1]);
+	copiaString(&codigoFonte, argv[1]);
 
 	inicializa(codigoFonte);
 
@@ -70,6 +72,7 @@ int main(int argc, char *argv[]){
 	imprimeListaTokens(listaTokens, 0);
 	imprimeListaErros(listaErros);
 
+	fclose(fonte);
 	return 0;
 }
 
@@ -94,6 +97,7 @@ void analisador(){
 	while((caractere = fgetc(fonte)) != EOF){ // enquanto não chegar ao fim do codigo-fonte
 		boolNovoLexema = 0;
 		boolError = 0;
+		boolTab = 0;
 		novoLexema[0] = '\0'; // inicializa a cada loop para poder formar novos lexemas
 
 		coluna++;
@@ -106,7 +110,6 @@ void analisador(){
 				copiaString(&novoToken, verificaTokenIdentificador(novoLexema));
 			}else{
 				addListaErros();
-				copiaString(&novoToken, "ERRO LEXICO");
 			}
 		}else if((caractere >= '0' && caractere <= '9')){ // numero
 			numero();
@@ -117,11 +120,13 @@ void analisador(){
 		}else if(caractere == '\n'){
 			linha++;
 			coluna = 0;
-		}else if(caractere == '\t'){
-		//	coluna++;
-		}else if(caractere != ' '){ //não-letra, não-número, então simbolo
+		}else if(caractere != ' ' && caractere != '\t'){ //não-letra, não-número, então simbolo
 			simbolos();
-			boolNovoLexema = 1;
+			if(!boolError){
+				boolNovoLexema = 1;
+			}else{
+				addListaErros();
+			}
 		}
 
 		if(boolNovoLexema) // se formou novo lexema, adiciona na lista
@@ -134,17 +139,13 @@ void analisador(){
  * Armazena o identificador lido na variável global novoLexema
  */
 void identificador(){
-	char auxCaractere[2];
 	novoLexema[0] = '\0';
 
 	while((caractere >= 'a' && caractere <= 'z') || // loop para identificar o lexema
 			(caractere >= 'A' && caractere <= 'Z') ||
 			(caractere >= '0' && caractere <= '9')){
 
-		auxCaractere[0] = caractere;
-		auxCaractere[1] = '\0';
-		strcat(novoLexema, auxCaractere); // concatena caracteres para formar identificador
-
+		concatChar(novoLexema, caractere);
 		caractere = fgetc(fonte); // lê o proximo caractere
 		coluna++;
 
@@ -153,18 +154,16 @@ void identificador(){
 		}
 	}
 
-	if(caractere != ' ' && caractere != '(' && caractere != ')' && caractere != '*' && caractere != '/' &&
-			caractere != '+' && caractere != '-' && caractere != '[' && caractere != ']' && caractere != ';'){
+	if(caractere != ' ' && caractere != '(' && caractere != ')' && caractere != '{' && caractere != '*' && caractere != '/' &&
+			caractere != '+' && caractere != '-' && caractere != '[' && caractere != ']' && caractere != ';' && caractere != ','){
 		boolError = 1;
-		while(caractere != ' ' && caractere != ';' && caractere != '\n' &&
-				caractere != '{' && caractere != '(' && caractere != ')'){
-			auxCaractere[0] = caractere;
-			auxCaractere[1] = '\0';
-			strcat(novoLexema, auxCaractere);
+		while(caractere != ' ' && caractere != ';' && caractere != ',' && caractere != '\n' &&
+				caractere != '{' && caractere != '(' && caractere != ')' && caractere != ']'){
+			concatChar(novoLexema, caractere);
 			caractere = fgetc(fonte);
 		}
 		ungetc(caractere, fonte);
-		copiaString(&novoToken, "ERRO LEXICO");
+		copiaString(&novoToken, "caractere invalido em IDENT");
 		return;
 	}
 
@@ -198,13 +197,9 @@ char *verificaTokenIdentificador(char ident[MAX_IDENT]){
  * Armazena o simbolo lido na variável global novoLexema
  */
 void simbolos(){
-	char auxCaractere[2];
 	int boolTokenAtribuido = 0;
 	int boolAsteriscoAntes = 0;
 	novoLexema[0] = '\0';
-
-	auxCaractere[0] = caractere;
-	auxCaractere[1] = '\0';
 
 	if(caractere == '"'){ // string
 		boolTokenAtribuido = 1;
@@ -212,10 +207,7 @@ void simbolos(){
 		caractere = fgetc(fonte);
 		coluna++;
 		do{
-			auxCaractere[0] = caractere;
-			auxCaractere[1] = '\0';
-
-			strcat(novoLexema, auxCaractere);
+			concatChar(novoLexema, caractere);
 
 			caractere = fgetc(fonte);
 			coluna++;
@@ -225,27 +217,21 @@ void simbolos(){
 		}
 		copiaString(&novoToken, "CADEIA");
 	}else if(caractere == '<' || caractere == '>' || caractere == '=' || caractere == '!'){
-		strcat(novoLexema, auxCaractere);
+		concatChar(novoLexema, caractere);
 		caractere = fgetc(fonte);
 		coluna++;
 
 		if(caractere == '='){
-			auxCaractere[0] = caractere;
-			auxCaractere[1] = '\0';
-
-			strcat(novoLexema, auxCaractere);
+			concatChar(novoLexema, caractere);
 		}
 	}else if(caractere == '/'){
-		strcat(novoLexema, auxCaractere);
+		concatChar(novoLexema, caractere);
 		caractere = fgetc(fonte);
 		coluna++;
 
 		if(caractere == '/'){ // Comentário curto
 			while(caractere != '\n'){
-				auxCaractere[0] = caractere;
-				auxCaractere[1] = '\0';
-
-				strcat(novoLexema, auxCaractere);
+				concatChar(novoLexema, caractere);
 
 				caractere = fgetc(fonte);
 				coluna++;
@@ -256,10 +242,7 @@ void simbolos(){
 			boolTokenAtribuido = 1;
 		}else if(caractere == '*'){ // Comentário longo
 			while(boolAsteriscoAntes != 1){
-				auxCaractere[0] = caractere;
-				auxCaractere[1] = '\0';
-
-				strcat(novoLexema, auxCaractere);
+				concatChar(novoLexema, caractere);
 
 				caractere = fgetc(fonte);
 				coluna++;
@@ -268,19 +251,14 @@ void simbolos(){
 					linha++;
 				}
 				if(caractere == '*'){
-					auxCaractere[0] = caractere;
-					auxCaractere[1] = '\0';
-
-					strcat(novoLexema, auxCaractere);
+					concatChar(novoLexema, caractere);
 
 					caractere = fgetc(fonte);
 					coluna++;
 					if(caractere == '/'){
 						boolAsteriscoAntes = 1;
 
-						auxCaractere[0] = caractere;
-						auxCaractere[1] = '\0';
-						strcat(novoLexema, auxCaractere);
+						concatChar(novoLexema, caractere);
 					}
 				}
 			}
@@ -289,36 +267,62 @@ void simbolos(){
 		}
 		
 	}else if(caractere == '&'){
-		strcat(novoLexema, auxCaractere);
+		concatChar(novoLexema, caractere);
 		caractere = fgetc(fonte);
 		coluna++;
 
 		if(caractere == '&'){ // Operador lógico AND
-			auxCaractere[0] = caractere;
-			auxCaractere[1] = '\0';
-
-			strcat(novoLexema, auxCaractere);
+			concatChar(novoLexema, caractere);
 		}else{ // ERRO
 
 		}
 	}else if(caractere == '|'){
-		strcat(novoLexema, auxCaractere);
+		concatChar(novoLexema, caractere);
 		caractere = fgetc(fonte);
 		coluna++;
 
 		if(caractere == '|'){ // Operador lógico OR
-			auxCaractere[0] = caractere;
-			auxCaractere[1] = '\0';
-
-			strcat(novoLexema, auxCaractere);
+			concatChar(novoLexema, caractere);
 		}else{ // ERRO
 
 		}
+	}else if(caractere == '+'){
+		concatChar(novoLexema, caractere);
+		caractere = fgetc(fonte);
+		coluna++;
+
+		if(caractere == '+'){ // Incremento
+			concatChar(novoLexema, caractere);
+		}else{
+			ungetc(caractere, fonte);
+			coluna--;
+		}
+	}else if(caractere == '-'){
+		concatChar(novoLexema, caractere);
+		caractere = fgetc(fonte);
+		coluna++;
+
+		if(caractere == '-'){ // Decremento
+			concatChar(novoLexema, caractere);
+		}else{
+			ungetc(caractere, fonte);
+			coluna--;
+		}
 	}else{
-		strcpy(novoLexema, auxCaractere);
+		concatChar(novoLexema, caractere);
 	}
 	if(!boolTokenAtribuido){
 		novoToken = getTokenSimbolo(novoLexema);
+	}
+	if(strcmp(novoToken, "ERRO LEXICO") == 0){
+		boolError = 1;
+		while(caractere != ' ' && caractere != ';' && caractere != '\n' &&
+				caractere != '{' && caractere != '(' && caractere != ')'){
+			caractere = fgetc(fonte);
+			concatChar(novoLexema, caractere);
+		}
+		ungetc(caractere, fonte);
+		copiaString(&novoToken, "símbolo inválido");
 	}
 }
 
@@ -340,25 +344,16 @@ char *getTokenSimbolo(char simb[3]){
 	return "ERRO LEXICO";
 }
 
-
-int isSimboloValido(){
-
-	return 0;
-}
-
 /*
  * Função para o Estado numero do autômato
  * Armazena o numero lido na variável global novoLexema
  */
 void numero(){
-	char auxDigito[2];
 	int isFloat = 0;
 	novoLexema[0] = '\0';
 
 	while( (caractere >= '0' && caractere <= '9') || caractere == '.'){ // loop para identificar o lexema
-		auxDigito[0] = caractere;
-		auxDigito[1] = '\0';
-		strcat(novoLexema, auxDigito); // concatena caracteres para formar identificador
+		concatChar(novoLexema, caractere);
 
 		caractere = fgetc(fonte); // lê o proximo caractere
 		coluna++;
@@ -372,16 +367,14 @@ void numero(){
 		}
 	}
 
-	if(caractere != ' ' && caractere != ')' && caractere != '*' && caractere != '/' &&
-			caractere != '+' && caractere != '-' && caractere != '[' && caractere != ']' && caractere != ';'){
+	if(caractere != ' ' && caractere != ')' && caractere != '*' && caractere != '/' && caractere != '+' &&
+			caractere != '-' && caractere != '[' && caractere != ']' && caractere != ';' && caractere != ','){
 		boolError = 1;
-		while(caractere != ' ' && caractere != ';' && caractere != '\n'){
-			auxDigito[0] = caractere;
-			auxDigito[1] = '\0';
-			strcat(novoLexema, auxDigito);
+		while(caractere != ' ' && caractere != ';' && caractere != ',' && caractere != '\n'){
+			concatChar(novoLexema, caractere);
 			caractere = fgetc(fonte);
 		}
-		copiaString(&novoToken, "ERRO LEXICO");
+		copiaString(&novoToken, "esperado número");
 		return;
 	}
 
@@ -487,4 +480,20 @@ void copiaString(char **to, char *from){
 	*to = (char *) malloc(sizeof(char) * tam);
 
 	strcpy(*to, from);
+}
+
+/*
+ * Função utilizada para concatenar um char em uma string
+ * Cocatena o char 'from'na string 'to'.
+ *
+ * @param to Uma string
+ * @param from Um char
+*/
+void concatChar(char *to, char from){
+	char aux[2];
+
+	aux[0] = from;
+	aux[1] = '\0';
+
+	strcat(to, aux);
 }
