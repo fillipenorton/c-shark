@@ -1,0 +1,50 @@
+class quicksort{
+	void quicksort(int[] vetor, int inicio, int fim) {
+		int posicao_pivo = 0;
+		
+		if (inicio < fim) {
+			posicao_pivo = particao(vetor, inicio, fim);
+			quicksort(vetor, inicio, posicao_pivo - 1);
+			quicksort(vetor, posicao_pivo + 1, fim);
+		}
+	}
+
+	int particao(int[] vetor, int inicio, int fim) {
+		int pivo = vetor[fim];
+		int i = inicio - 1;
+		
+		for (int j = inicio; j < fim; j++) {
+			if (vetor[j] <= pivo) {
+				i++;
+				troca(vetor, i, j);
+			}
+		}
+		troca(vetor, i + 1, fim);
+		return i + 1;
+	}
+
+	void troca(int[] a, int i, int j) {
+		int temp = a[i];
+		a[i] = a[j];
+		a[j] = temp;
+	}
+
+	void main(char[] args){
+		int tam_vetor;
+		
+		WriteLine("Digite o tamanho do vetor:");
+		tam_vetor = intReadLine();
+		
+		WriteLine("Digite os elementos:");
+		int vetor[tam_vetor];
+		
+		for (int i = 0 ; i < tam_vetor ; i++) {
+			int elemento;
+			elemento = intReadLine();
+			vetor[i] = elemento;
+		}
+		
+		WriteLine("Seu vetor sera ordenado agora.");
+		quicksort(vetor, 0, tam_vetor);
+	}
+}

@@ -1,0 +1,61 @@
+class mergesort{
+	void mergesort(int[] vetor, int inicio, int fim) {
+		if (inicio < fim) {
+			int meio = (inicio + fim) / 2;
+			int n1 = meio - inicio + 1;
+			int n2 = fim - meio;
+			
+			mergeSort(vetor, inicio, meio);
+			mergeSort(vetor, meio + 1, fim);
+			
+			int[n1] inicioArray;
+			int[n2] fimArray;
+			
+			for (int i = 0; i < n1; i++) {
+				inicioArray[i] = vetor[inicio + i];
+			}
+	 
+			for (int i = 0; i < n2; i++) {
+				fimArray[i] = vetor[meio + i + 1];
+			}
+
+			int i = 0;
+			int j = 0;
+			for (int k = inicio; k < fim + 1; k++) {
+				if (i == length(inicioArray)) {
+					vetor[k] = fimArray[j];
+					j++;
+				} else if (j == length(fimArray)) {
+					vetor[k] = inicioArray[i];
+					i++;
+				}
+				else if (inicioArray[i] <= fimArray[j]) {
+					vetor[k] = inicioArray[i];
+					i++;
+				} else {
+					vetor[k] = fimArray[j];
+					j++;
+				}
+			}
+		}
+	}
+
+	void main(char[] args){
+		int tam_vetor;
+		
+		WriteLine("Digite o tamanho do vetor:");
+		tam_vetor = intReadLine();
+		
+		WriteLine("Digite os elementos:");
+		int vetor[tam_vetor];
+		
+		for (int i = 0 ; i < tam_vetor ; i++) {
+			int elemento;
+			elemento = intReadLine();
+			vetor[i] = elemento;
+		}
+		
+		WriteLine("Seu vetor sera ordenado agora.");
+		mergesort(vetor, 0, tam_vetor);
+	}	
+}

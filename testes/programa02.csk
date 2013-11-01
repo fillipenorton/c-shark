@@ -7,7 +7,7 @@ class Program02{
 	Exemplo de comentário longo
 */
 		if(num <= 2){
-			num = num + 5;
+			num = num +5;
 		}
 	}
 }
